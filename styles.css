@@ -148,3 +148,44 @@ img{vertical-align:middle}
   [data-hscroll]>*{flex-basis:100%!important}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* ---------- Learning innovation: tabbed showcases ---------- */
+.lx{--fg:#12112B;--mut:#3E3C60;--line:rgba(18,17,43,.14);--chip:rgba(255,255,255,.7);--bgc:#F7F3EC;color:var(--fg)}
+.lx-dark{--fg:#F4F2FF;--mut:#B8B5DA;--line:rgba(255,255,255,.16);--chip:rgba(255,255,255,.05);--bgc:#0B0A26}
+.lx-h2{margin:0;font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:clamp(40px,5.2vw,80px);line-height:.98;letter-spacing:-.045em;max-width:14ch}
+.lx-num{font-size:clamp(64px,8vw,128px);line-height:.8;font-weight:300;opacity:.22;flex:0 0 auto}
+.lx-tabs{position:relative;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--line);margin-bottom:64px}
+.lx-tabs::-webkit-scrollbar{display:none}
+.lx-tab{flex:0 0 auto;appearance:none;background:none;border:0;margin:0;padding:18px 22px 22px;font:500 17px/1.2 'Hanken Grotesk',system-ui,sans-serif;color:var(--mut);cursor:pointer;transition:color .3s;white-space:nowrap}
+.lx-tab:hover,.lx-tab[aria-selected=true]{color:var(--fg)}
+.lx-tab[aria-selected=true]{font-weight:600}
+.lx-tab:focus-visible{outline:2px solid #8A3FFC;outline-offset:-6px;border-radius:12px}
+.lx-ind{position:absolute;left:0;bottom:0;height:3px;width:0;border-radius:3px;background:linear-gradient(90deg,#5B7BFF,#8A3FFC,#E8508A);transition:transform .6s cubic-bezier(.7,0,.2,1),width .6s cubic-bezier(.7,0,.2,1);pointer-events:none}
+.lx-panel{display:flex;flex-wrap:wrap;align-items:center;gap:48px 80px}
+.lx-panel[hidden]{display:none}
+.lx-panel:focus-visible{outline:2px solid #8A3FFC;outline-offset:12px;border-radius:20px}
+.lx-copy{flex:1 1 360px;min-width:0}
+.lx-copy h3{margin:0 0 22px;font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:clamp(28px,2.8vw,42px);line-height:1.05;letter-spacing:-.03em}
+.lx-copy p{margin:0;font-size:18px;line-height:1.7;color:var(--mut);max-width:56ch}
+.lx-copy .lx-tbd{display:inline-block;padding:12px 16px;border:1px dashed var(--line);border-radius:14px;font-size:15px}
+.lx-car{flex:1.7 1 540px;min-width:0}
+.lx-frame{position:relative;border-radius:30px;padding:12px;background:var(--chip);border:1px solid var(--line);box-shadow:0 70px 120px -70px rgba(11,10,38,.75);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.lx-bar{display:flex;gap:7px;padding:4px 8px 12px}
+.lx-bar i{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.lx-slides{position:relative;aspect-ratio:1582/1184;border-radius:18px;overflow:hidden;background:#E9E6F7;touch-action:pan-y}
+.lx-slide{position:absolute;inset:0;margin:0;visibility:hidden;overflow:hidden}
+.lx-slide.is-on{visibility:visible}
+.lx-slide>img,.lx-slide>div{display:block;width:100%;height:100%;object-fit:cover;object-position:top left}
+.lx-ph{display:grid!important;place-items:center;background:#1B1846 url(assets/aurora_square.jpg) center/cover}
+.lx-ph span{padding:10px 16px;border-radius:999px;background:rgba(11,10,38,.55);color:#fff;font-size:13px;font-weight:600;letter-spacing:.08em;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.lx-ctrl{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:22px}
+.lx-dots{display:flex;align-items:center;gap:2px}
+.lx-dot{position:relative;width:28px;height:28px;border:0;padding:0;background:none;cursor:pointer;transition:width .5s cubic-bezier(.7,0,.2,1)}
+.lx-dot::before{content:"";position:absolute;left:9px;right:9px;top:9px;bottom:9px;border-radius:999px;background:var(--line);transition:background .3s}
+.lx-dot[aria-current=true]{width:52px}
+.lx-dot[aria-current=true]::before{background:linear-gradient(90deg,#5B7BFF,#8A3FFC)}
+.lx-dot:focus-visible,.lx-arr:focus-visible{outline:2px solid #8A3FFC;outline-offset:2px;border-radius:999px}
+.lx-arr{width:52px;height:52px;flex:0 0 auto;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--fg);font-size:20px;cursor:pointer;transition:background .3s,color .3s,border-color .3s}
+.lx-arr:hover{background:var(--fg);color:var(--bgc);border-color:var(--fg)}
+.lx-live{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);margin:0}
+@media (max-width:640px){.lx-tabs{margin-bottom:40px}.lx-tab{padding:16px 14px 18px;font-size:15.5px}.lx-frame{padding:8px;border-radius:22px}.lx-slides{border-radius:14px}}

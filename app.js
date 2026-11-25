@@ -249,6 +249,122 @@ function splitWords(root) {
   return out;
 }
 
+/* ---------------- tabs + carousels (work without GSAP) ---------------- */
+function initTabs(page) {
+  page.querySelectorAll('[data-tabs]').forEach(box => {
+    const list = box.querySelector('[role=tablist]');
+    const tabs = [...list.querySelectorAll('[role=tab]')];
+    const ind = list.querySelector('.lx-ind');
+    const place = () => {
+      const t = tabs.find(x => x.getAttribute('aria-selected') === 'true');
+      if (!t || !ind) return;
+      ind.style.width = t.offsetWidth + 'px';
+      ind.style.transform = `translateX(${t.offsetLeft}px)`;
+    };
+    const select = (t, focus) => {
+      if (focus) t.focus({ preventScroll: true });
+      if (t.getAttribute('aria-selected') === 'true') return;
+      tabs.forEach(x => {
+        const on = x === t;
+        x.setAttribute('aria-selected', on ? 'true' : 'false');
+        x.tabIndex = on ? 0 : -1;
+        document.getElementById(x.getAttribute('aria-controls')).hidden = !on;
+      });
+      place();
+      const l = t.offsetLeft - 24, r = t.offsetLeft + t.offsetWidth + 24;
+      if (l < list.scrollLeft) list.scrollTo({ left: l, behavior: 'smooth' });
+      else if (r > list.scrollLeft + list.clientWidth) list.scrollTo({ left: r - list.clientWidth, behavior: 'smooth' });
+      const p = document.getElementById(t.getAttribute('aria-controls'));
+      if (motion) {
+        const kids = [...p.children];
+        G.set(kids, { opacity: 1, '--ry': '0px' });
+        G.fromTo(kids, { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: .8, ease: 'expo.out', stagger: .08, clearProps: 'transform' });
+        const win = p.querySelector('.lx-slides');
+        if (win) G.fromTo(win, { clipPath: 'inset(0% 0% 0% 100% round 18px)' }, { clipPath: 'inset(0% 0% 0% 0% round 18px)', duration: 1.1, ease: 'expo.inOut' });
+        ST.refresh();
+      }
+    };
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => select(t));
+      t.addEventListener('keydown', e => {
+        const n = tabs.length;
+        const j = e.key === 'ArrowRight' ? (i + 1) % n : e.key === 'ArrowLeft' ? (i - 1 + n) % n : e.key === 'Home' ? 0 : e.key === 'End' ? n - 1 : null;
+        if (j === null) return;
+        e.preventDefault();
+        select(tabs[j], true);
+      });
+    });
+    place();
+    requestAnimationFrame(place);
+    if (document.fonts) document.fonts.ready.then(place);
+    addEventListener('resize', place);
+    cleanups.push(() => removeEventListener('resize', place));
+  });
+}
+
+function initCarousels(page) {
+  page.querySelectorAll('[data-carousel]').forEach(car => {
+    const slides = [...car.querySelectorAll('.lx-slide')];
+    const dots = [...car.querySelectorAll('.lx-dot')];
+    const live = car.querySelector('.lx-live');
+    if (slides.length < 2) return;
+    let cur = 0;
+    const show = (n, dir) => {
+      n = (n + slides.length) % slides.length;
+      if (n === cur) return;
+      dir = dir || (n > cur ? 1 : -1);
+      const a = slides[cur], b = slides[n];
+      dots.forEach((d, i) => d.setAttribute('aria-current', i === n ? 'true' : 'false'));
+      slides.forEach(s => {
+        if (s !== a && s !== b) s.classList.remove('is-on');
+        s.setAttribute('aria-hidden', s === b ? 'false' : 'true');
+      });
+      cur = n;
+      if (live) live.textContent = `Screen ${n + 1} of ${slides.length}`;
+      if (!motion) { a.classList.remove('is-on'); b.classList.add('is-on'); return; }
+      G.killTweensOf(slides);
+      G.killTweensOf(slides.map(s => s.firstElementChild));
+      G.set(slides, { zIndex: 0 });
+      G.set(a, { zIndex: 1, clipPath: 'inset(0% 0% 0% 0%)' });
+      b.classList.add('is-on');
+      G.set(b, { zIndex: 2 });
+      G.fromTo(b, { clipPath: dir > 0 ? 'inset(0% 0% 0% 100%)' : 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1, ease: 'expo.inOut' });
+      G.fromTo(b.firstElementChild, { scale: 1.14, xPercent: dir * 8 }, { scale: 1, xPercent: 0, duration: 1.3, ease: 'expo.out' });
+      G.to(a.firstElementChild, { xPercent: -dir * 10, duration: 1, ease: 'expo.inOut', onComplete: () => {
+        if (slides[cur] !== a) a.classList.remove('is-on');
+        G.set(a.firstElementChild, { xPercent: 0 });
+      } });
+    };
+    car.querySelectorAll('.lx-arr').forEach(btn => btn.addEventListener('click', () => { const d = +btn.dataset.dir; show(cur + d, d); }));
+    dots.forEach((d, i) => d.addEventListener('click', () => show(i)));
+    car.addEventListener('keydown', e => {
+      if (e.target.closest('.lx-dots, .lx-arr, .lx-frame') && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
+        e.preventDefault();
+        const d = e.key === 'ArrowRight' ? 1 : -1;
+        show(cur + d, d);
+      }
+    });
+    const win = car.querySelector('.lx-slides');
+    let x0 = null;
+    win.addEventListener('pointerdown', e => { x0 = e.clientX; });
+    win.addEventListener('pointerup', e => {
+      if (x0 === null) return;
+      const dx = e.clientX - x0; x0 = null;
+      if (Math.abs(dx) > 40) { const d = dx < 0 ? 1 : -1; show(cur + d, d); }
+    });
+  });
+}
+
+function tabsMotion(page) {
+  page.querySelectorAll('[data-tabs]').forEach(box => {
+    const win = box.querySelector('[role=tabpanel]:not([hidden]) .lx-slides');
+    const ind = box.querySelector('.lx-ind');
+    if (win) G.fromTo(win, { clipPath: 'inset(100% 0% 0% 0% round 18px)' }, { clipPath: 'inset(0% 0% 0% 0% round 18px)', duration: 1.6, ease: 'expo.inOut', scrollTrigger: { trigger: win, start: 'top 88%' } });
+    if (win && win.querySelector('img')) G.from(win.querySelector('img'), { scale: 1.25, duration: 2, ease: 'expo.out', scrollTrigger: { trigger: win, start: 'top 88%' } });
+    if (ind) G.from(ind, { clipPath: 'inset(0% 100% 0% 0%)', duration: 1.4, ease: 'expo.out', scrollTrigger: { trigger: box, start: 'top 85%' } });
+  });
+}
+
 /* ---------------- page setup ---------------- */
 function teardown() {
   if (ctx) { ctx.revert(); ctx = null; }
@@ -262,6 +378,8 @@ function setup(page) {
   initGL(page);
   initDemos(page);
   initForms(page);
+  initTabs(page);
+  initCarousels(page);
   if (!motion) return;
   const hero = page.querySelector('section');
   ctx = G.context(() => {
@@ -275,6 +393,7 @@ function setup(page) {
     parallax(page);
     counters(page, hero);
     marqueesInit(page);
+    tabsMotion(page);
   }, view);
   refreshOnLoad();
 }
@@ -327,8 +446,8 @@ function headings(page, hero) {
 }
 
 function reveals(page, hero) {
-  const cand = [...page.querySelectorAll('p, h3, li, figure, form, blockquote, address, .zlift, .ztile, a.zbtn, .f-chips, [data-hscroll] > *')]
-    .filter(el => !(hero && hero.contains(el)) && !el.closest('h1, h2, [data-scrub]') && !el.matches('[data-scrub]') && !inMarquee(el));
+  const cand = [...page.querySelectorAll('p, h3, li, figure, form, blockquote, address, .zlift, .ztile, a.zbtn, .f-chips, [data-hscroll] > *, [data-tabs] > [role=tablist], [role=tabpanel]:not([hidden]) > *')]
+    .filter(el => !(hero && hero.contains(el)) && !el.closest('h1, h2, [data-scrub]') && (!el.closest('[data-tabs]') || el.matches('[role=tablist], [role=tabpanel] > *')) && !el.matches('[data-scrub]') && !inMarquee(el));
   const list = pickTop(cand);
   list.forEach(el => el.classList.add('mv'));
   G.set(list, { opacity: 0, '--ry': '48px' });
@@ -341,7 +460,7 @@ function reveals(page, hero) {
 
 function images(page, hero) {
   page.querySelectorAll('img').forEach(im => {
-    if ((hero && hero.contains(im)) || inMarquee(im) || isPill(im)) return;
+    if ((hero && hero.contains(im)) || inMarquee(im) || isPill(im) || im.closest('[data-carousel]')) return;
     const w = im.parentElement;
     if (!clipOK(w)) return;
     const st = { trigger: w, start: 'top 90%' };
